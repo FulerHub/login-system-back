@@ -6,12 +6,12 @@ class Mail {
 
         this.mailer = nodemailer.createTransport(
             {
-                host: "***",
+                host: "in-v3.mailjet.com",
                 port: 587,
                 secure: false,
                 auth: {
-                    user: '***',
-                    pass: '***'
+                    user: 'd664d3d5980e29975654da8ba0ef7cbe',
+                    pass: 'b3ec98a460ad5bcce0e78f267d9e4f81'
                 },
                 tls: {
                     ciphers:'SSLv3'
@@ -20,7 +20,7 @@ class Mail {
     }
     async sendActivate(to:string, link:string) {
         await this.mailer.sendMail({
-            from: '***',
+            from: 'chuprina1936@outlook.com',
             to:to,
             subject: 'Account activation from website',
             text: '',
