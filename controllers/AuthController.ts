@@ -11,7 +11,7 @@ import TokenService from "../services/token.service"
 class AuthController {
     public async registration(req: Request, res: Response, next:NextFunction) {
         try{
-            const {name, email, password} = req.body;
+            const {email, password} = req.body;
             const user = await Users.findOne({ where: { email: email } });
             if(user) return res.status(400).json({message: "User with this email address already exists"});
 
@@ -19,28 +19,26 @@ class AuthController {
             const link = crypto.randomUUID();
 
             let newUser = await Users.create({
-                name: name,
                 email: email,
                 password: hashPassword,
                 activationLink: link
             });
 
-            //await Mail.sendActivate(email,`http://localhost:8000/api/activate/${link}`);
+            await Mail.sendActivate(email,`https://api.river-fuler.space/api/auth/activate/${link}`);
 
-            let payload = {
+            let payload:iTokenPayload = {
                 id: newUser.id,
-                name: newUser.name,
+                email: newUser.email,
                 isActivated: newUser.isActivated,
             };
 
             const {accessToken, refreshToken} = TokenService.generate(payload);
             await TokenService.saveToken(newUser.id,refreshToken);
 
-            res.cookie('refreshToken', refreshToken,{maxAge: 30*24*60*60*1000, httpOnly: true});
+            res.cookie('refreshToken', refreshToken,{maxAge: 30*24*60*60*1000, httpOnly: true, secure:true, sameSite: 'none' });
 
             return res.status(200).json({
                 id:newUser.id,
-                name:newUser.name,
                 email:newUser.email,
                 isActivated:newUser.isActivated,
                 accessToken,
@@ -58,9 +56,9 @@ class AuthController {
             const checkPassword = await bcrypt.compare(password, user.password);
             if (!checkPassword) return res.status(400).json({message: "Invalid password"});
 
-            let payload = {
+            let payload:iTokenPayload = {
                 id: user.id,
-                name: user.name,
+                email: user.email,
                 isActivated: user.isActivated,
             };
 
@@ -68,10 +66,9 @@ class AuthController {
             await TokenService.saveToken(user.id,refreshToken);
 
 
-            res.cookie('refreshToken', refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
+            res.cookie('refreshToken', refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true, secure:true, sameSite: 'none'});
             return res.status(200).json({
                 id:user.id,
-                name:user.name,
                 email:user.email,
                 isActivated:user.isActivated,
                 accessToken,
@@ -98,7 +95,7 @@ class AuthController {
             if(!user) return res.status(400).json({message: "Incorrect activation link"});
             user.isActivated = true;
             await user.save();
-            return res.redirect("/");
+            return res.redirect(process.env.REDIRECT_ACTIVATED_URL as string);
         }catch (e) {
             res.status(400).json({message:"Error: Can't activate"});
         }
@@ -107,25 +104,24 @@ class AuthController {
         try{
             const {refreshToken} = req.cookies;
             if (!refreshToken) return res.status(401).json({message: "User not authorized"});
-            const userToken:any = jwt.verify(refreshToken, 'SECRET_REFRESH');
+            const userToken:any = jwt.verify(refreshToken, process.env.REFRESH_SECRET as string);
             const token = await TokenService.findToken(refreshToken);
             if (!userToken || !token) return res.status(401).json({message: "User not authorized"});
 
             const user = await Users.findByPk(userToken.id);
             if(!user) return res.status(401).json({message: "User not found"});
-            let payload = {
+            let payload:iTokenPayload = {
                 id: user.id,
-                name: user.name,
+                email: user.email,
                 isActivated: user.isActivated,
             };
             const {accessToken,refreshToken:refToken} = TokenService.generate(payload);
 
             await TokenService.saveToken(userToken.id, refToken);
-            res.cookie('refreshToken', refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
+            res.cookie('refreshToken', refToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true, secure:true, sameSite: 'none'});
 
             return res.status(200).json({
                 id:user.id,
-                name:user.name,
                 email:user.email,
                 isActivated:user.isActivated,
                 accessToken,
@@ -138,7 +134,7 @@ class AuthController {
     public async getUsers(req: Request, res: Response, next:NextFunction) {
         try{
             const users = await Users.findAll({
-                attributes: ['id','name','email','isActivated']
+                attributes: ['id','email','isActivated']
             });
             return res.status(200).json(users);
         }catch (e) {

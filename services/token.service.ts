@@ -1,10 +1,15 @@
 import {Token} from "../models/token";
 import jwt from "jsonwebtoken";
 
+interface IGenerateToken {
+    accessToken:string
+    refreshToken:string
+}
+
 class TokenService {
-    generate(payload:any) {
-        const accessToken = jwt.sign(payload, 'SECRET_KEY',{expiresIn:'30m'});
-        const refreshToken = jwt.sign(payload, 'SECRET_KEY',{expiresIn:'30d'});
+    generate(payload:iTokenPayload):IGenerateToken {
+        const accessToken = jwt.sign(payload, process.env.ACCESS_SECRET as string,{expiresIn:'30m'});
+        const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET as string,{expiresIn:'30d'});
         return {
             accessToken,
             refreshToken

@@ -11,7 +11,10 @@ const app: Express = express();
 const PORT = process.env.PORT;
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({
+    credentials: true,
+    origin: 'https://test.river-fuler.ru'
+}));
 app.use(express.urlencoded({ extended: false }));
 
 app.use('/api', router);
@@ -33,7 +36,7 @@ const startApp = async ()=>{
     }catch (e) {
         console.log(e)
     }
-}
+};
 
 connection.sync().then(()=>{
     console.log('Database synced successfully!');
@@ -41,19 +44,5 @@ connection.sync().then(()=>{
 }).catch((err)=>{
     console.log("Error",err)
 });
-
-
-
-
-/*
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-app.use('/auth', authRouter);
-
-app.listen(port, ()=>{
-    console.log('Server start on PORT: ',port)
-});
-*/
 
 export default app;

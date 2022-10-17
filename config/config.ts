@@ -5,9 +5,9 @@ import {Token} from "../models/token";
 const connection = new Sequelize({
     dialect: "mysql",
     host: "localhost",
-    username: "river",
-    password: "****",
-    database: "testlogin",
+    username: "logintest",
+    password: "***",
+    database: "logintest",
     logging: false,
     models: [Users,Token]
 });
